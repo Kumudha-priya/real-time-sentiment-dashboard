@@ -1,4 +1,4 @@
-from sentiment import analyze_sentiment
+from app.sentiment import analyze_sentiment
 import pandas as pd
 
 print("SCRIPT STARTED...\n")

@@ -1,11 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.topics import router as topics_router
+from app.analytics_app import router as analytics_router
+from app.pipeline import run_pipeline
 
 app = FastAPI()
 
-# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -14,9 +14,27 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# INCLUDE TOPICS ROUTER
-app.include_router(topics_router)
+app.include_router(analytics_router)
 
 @app.get("/")
 def home():
     return {"message": "Backend Running"}
+
+@app.post("/run-pipeline")
+def execute_pipeline():
+
+    posts = [
+        {"text": "I love this phone"},
+        {"text": "Battery is terrible"},
+        {"text": "Camera quality is amazing"}
+    ]
+
+    results = run_pipeline(posts)
+
+    return results
+from app.trend_analysis import (
+    load_data,
+    get_daily_trends,
+    get_sentiment_distribution,
+    add_moving_average
+)

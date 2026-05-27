@@ -1,10 +1,17 @@
 import nltk
 import time
 
+# backend/app/sentiment.py or main.py
+
 from transformers import pipeline
+
+sentiment_pipeline = pipeline(
+    "sentiment-analysis",
+    model="distilbert/distilbert-base-uncased-finetuned-sst-2-english"
+)
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
-from logger import logger
+from app.logger import logger
 
 # nltk.download('vader_lexicon')  # run once only
 

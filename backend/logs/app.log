@@ -29,3 +29,15 @@
 2026-05-18 20:25:41,926 - INFO - Sentiment result: {'sentiment': 'negative', 'confidence': 0.6249, 'scores': {'neg': 0.451, 'neu': 0.549, 'pos': 0.0, 'compound': -0.6249}}
 2026-05-18 20:25:41,926 - INFO - Running DistilBERT on: This is the worst update ever.
 2026-05-18 20:25:41,946 - INFO - DistilBERT Result: {'model': 'DistilBERT', 'sentiment': 'Negative', 'confidence_score': 0.9998, 'prediction_time': 0.0197}
+2026-05-25 13:03:20,774 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-05-25 13:03:28,765 - INFO - Use pytorch device_name: cpu
+2026-05-25 13:04:22,276 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-05-25 13:04:30,189 - INFO - Use pytorch device_name: cpu
+2026-05-25 13:11:02,627 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-05-25 13:11:11,731 - INFO - Use pytorch device_name: cpu
+2026-05-25 13:12:14,481 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-05-25 13:12:24,871 - INFO - Use pytorch device_name: cpu
+2026-05-25 13:13:16,111 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-05-25 13:13:21,518 - INFO - Use pytorch device_name: cpu
+2026-05-25 19:41:56,324 - WARNING - '(ReadTimeoutError("HTTPSConnectionPool(host='huggingface.co', port=443): Read timed out. (read timeout=10)"), '(Request ID: 4401bf10-082f-4a9e-b917-9f92f6631bb9)')' thrown while requesting HEAD https://huggingface.co/api/resolve-cache/models/distilbert/distilbert-base-uncased-finetuned-sst-2-english/714eb0fa89d2f80546fda750413ed43d93601a13/config.json
+2026-05-25 19:41:56,326 - WARNING - Retrying in 1s [Retry 1/5].

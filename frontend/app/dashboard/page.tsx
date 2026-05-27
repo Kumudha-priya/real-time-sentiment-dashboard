@@ -1,402 +1,144 @@
 "use client";
 
 import DatasetTable from "@/components/DatasetTable";
+import { useDashboard } from "@/hooks/useDashboard";
 
-import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  LineChart,
-  Line,
-  Legend,
-} from "recharts";
+type TrendItem = {
+  date: string;
+  count: number;
+  moving_avg_sentiment: number;
+};
 
-export default function Home() {
+type SentimentTotals = {
+  Positive: number;
+  Negative: number;
+  Neutral: number;
+};
 
-  const sampleData = [
-    {
-      text: "I love this dashboard! Amazing UI.",
-      sentiment: "Positive",
-      confidence_score: 0.92,
-    },
+export default function Dashboard() {
+  const { data, loading, error } = useDashboard();
 
-    {
-      text: "This update is terrible.",
-      sentiment: "Negative",
-      confidence_score: 0.87,
-    },
+  if (loading || !data) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-white">
+        Loading dashboard data...
+      </div>
+    );
+  }
 
-    {
-      text: "The app is okay for now.",
-      sentiment: "Neutral",
-      confidence_score: 0.50,
-    },
-  ];
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center text-red-400">
+        <h2 className="text-2xl mb-4">{error}</h2>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 bg-red-600 rounded-xl"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
-  const sentimentData = [
-    { name: "Positive", value: 1240 },
-    { name: "Negative", value: 420 },
-    { name: "Neutral", value: 310 },
-  ];
+  // ================= SAFE NORMALIZATION =================
 
-  const barData = [
-    { day: "Mon", posts: 120 },
-    { day: "Tue", posts: 210 },
-    { day: "Wed", posts: 180 },
-    { day: "Thu", posts: 260 },
-    { day: "Fri", posts: 320 },
-  ];
+  const sentimentRaw = data.sentiment_distribution;
 
-  const lineData = [
-    { day: "Mon", positive: 120, negative: 40 },
-    { day: "Tue", positive: 180, negative: 60 },
-    { day: "Wed", positive: 150, negative: 55 },
-    { day: "Thu", positive: 240, negative: 70 },
-    { day: "Fri", positive: 300, negative: 90 },
-  ];
+  let totals: SentimentTotals = {
+    Positive: 0,
+    Negative: 0,
+    Neutral: 0,
+  };
 
-  const COLORS = ["#10b981", "#ef4444", "#64748b"];
+  // ✔ CASE 1: array
+  if (Array.isArray(sentimentRaw)) {
+    for (const item of sentimentRaw) {
+      totals.Positive += item.Positive ?? 0;
+      totals.Negative += item.Negative ?? 0;
+      totals.Neutral += item.Neutral ?? 0;
+    }
+  }
+
+  // ✔ CASE 2: object
+  else if (sentimentRaw && typeof sentimentRaw === "object") {
+    const obj = sentimentRaw as SentimentTotals;
+
+    totals = {
+      Positive: obj.Positive ?? 0,
+      Negative: obj.Negative ?? 0,
+      Neutral: obj.Neutral ?? 0,
+    };
+  }
+
+  // ================= TRENDS =================
+
+  const trendArray: TrendItem[] = Array.isArray(data.daily_trends)
+    ? data.daily_trends
+    : [];
+
+  const tableData = trendArray.map((item) => ({
+    text: item?.date ?? "No Date",
+    sentiment: "Trend",
+    confidence_score: item?.moving_avg_sentiment ?? 0,
+    topic_name: "Analytics",
+  }));
+
+  const avgConfidence =
+    trendArray.length > 0
+      ? trendArray.reduce(
+          (acc, curr) => acc + (curr?.moving_avg_sentiment ?? 0),
+          0
+        ) / trendArray.length
+      : 0;
+
+  // ================= UI =================
 
   return (
-
     <div className="min-h-screen flex bg-gradient-to-br from-gray-950 via-black to-gray-900 text-white">
 
-      {/* SIDEBAR */}
-      <div className="w-64 bg-black/40 backdrop-blur-md border-r border-gray-800 p-6 hidden lg:block">
-
+      <div className="w-64 bg-black/40 p-6 hidden lg:block">
         <h2 className="text-3xl font-bold mb-10">
           AI Monitor
         </h2>
-
-        <nav className="space-y-4">
-
-          <div className="bg-blue-600 p-3 rounded-xl cursor-pointer hover:bg-blue-500 transition-all duration-300 shadow-lg">
-            Dashboard
-          </div>
-
-          <div className="bg-gray-900 border border-gray-800 p-3 rounded-xl cursor-pointer hover:bg-gray-800 transition-all duration-300">
-            Analytics
-          </div>
-
-          <div className="bg-gray-900 border border-gray-800 p-3 rounded-xl cursor-pointer hover:bg-gray-800 transition-all duration-300">
-            Trends
-          </div>
-
-          <div className="bg-gray-900 border border-gray-800 p-3 rounded-xl cursor-pointer hover:bg-gray-800 transition-all duration-300">
-            Live Feed
-          </div>
-
-          <div className="bg-gray-900 border border-gray-800 p-3 rounded-xl cursor-pointer hover:bg-gray-800 transition-all duration-300">
-            Settings
-          </div>
-
-        </nav>
-
       </div>
 
-      {/* PAGE CONTAINER */}
       <div className="flex-1 p-8">
 
-        {/* HEADER */}
-        <div className="mb-10">
+        <h1 className="text-5xl font-bold mb-10">
+          Sentiment Dashboard
+        </h1>
 
-          <h1 className="text-5xl font-bold tracking-wide mb-2">
-            Sentiment Dashboard
-          </h1>
+        <div className="grid grid-cols-4 gap-6">
 
-          <p className="text-gray-400 text-lg">
-            Real-Time Social Media Brand Monitoring
-          </p>
-
-        </div>
-
-        {/* SUMMARY CARDS */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
-
-          {/* POSITIVE */}
-          <div className="bg-gradient-to-br from-emerald-500 to-emerald-700 p-6 rounded-3xl shadow-2xl hover:scale-105 transition-all duration-300">
-
-            <h2 className="text-lg font-semibold text-white/80">
-              Total Positive
-            </h2>
-
-            <p className="text-4xl font-bold mt-4">
-              1,240
-            </p>
-
+          <div className="bg-emerald-600 p-6 rounded-3xl">
+            Positive
+            <h2 className="text-4xl">{totals.Positive}</h2>
           </div>
 
-          {/* NEGATIVE */}
-          <div className="bg-gradient-to-br from-rose-500 to-red-700 p-6 rounded-3xl shadow-2xl hover:scale-105 transition-all duration-300">
-
-            <h2 className="text-lg font-semibold text-white/80">
-              Total Negative
-            </h2>
-
-            <p className="text-4xl font-bold mt-4">
-              420
-            </p>
-
+          <div className="bg-red-600 p-6 rounded-3xl">
+            Negative
+            <h2 className="text-4xl">{totals.Negative}</h2>
           </div>
 
-          {/* NEUTRAL */}
-          <div className="bg-gradient-to-br from-slate-500 to-slate-700 p-6 rounded-3xl shadow-2xl hover:scale-105 transition-all duration-300">
-
-            <h2 className="text-lg font-semibold text-white/80">
-              Total Neutral
-            </h2>
-
-            <p className="text-4xl font-bold mt-4">
-              310
-            </p>
-
+          <div className="bg-slate-600 p-6 rounded-3xl">
+            Neutral
+            <h2 className="text-4xl">{totals.Neutral}</h2>
           </div>
 
-          {/* CONFIDENCE */}
-          <div className="bg-gradient-to-br from-blue-500 to-indigo-700 p-6 rounded-3xl shadow-2xl hover:scale-105 transition-all duration-300">
-
-            <h2 className="text-lg font-semibold text-white/80">
-              Average Confidence
+          <div className="bg-blue-600 p-6 rounded-3xl">
+            Avg Confidence
+            <h2 className="text-4xl">
+              {avgConfidence.toFixed(2)}
             </h2>
-
-            <p className="text-4xl font-bold mt-4">
-              92%
-            </p>
-
           </div>
 
         </div>
 
-        {/* CHART SECTION */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-10">
-
-          {/* PIE CHART */}
-          <div className="bg-gray-900/80 border border-gray-800 backdrop-blur-md p-6 rounded-3xl shadow-2xl">
-
-            <h2 className="text-2xl font-bold mb-6">
-              Sentiment Distribution
-            </h2>
-
-            <div className="h-80">
-
-              <ResponsiveContainer width="100%" height="100%">
-
-                <PieChart>
-
-                  <Pie
-                    data={sentimentData}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={100}
-                    dataKey="value"
-                    label
-                  >
-
-                    {sentimentData.map((entry, index) => (
-
-                      <Cell
-                        key={index}
-                        fill={COLORS[index % COLORS.length]}
-                      />
-
-                    ))}
-
-                  </Pie>
-
-                  <Tooltip />
-
-                </PieChart>
-
-              </ResponsiveContainer>
-
-            </div>
-
-          </div>
-
-          {/* BAR CHART */}
-          <div className="bg-gray-900/80 border border-gray-800 backdrop-blur-md p-6 rounded-3xl shadow-2xl">
-
-            <h2 className="text-2xl font-bold mb-6">
-              Weekly Activity
-            </h2>
-
-            <div className="h-80">
-
-              <ResponsiveContainer width="100%" height="100%">
-
-                <BarChart data={barData}>
-
-                  <CartesianGrid strokeDasharray="3 3" />
-
-                  <XAxis dataKey="day" />
-
-                  <YAxis />
-
-                  <Tooltip />
-
-                  <Bar
-                    dataKey="posts"
-                    fill="#3b82f6"
-                    radius={[10, 10, 0, 0]}
-                  />
-
-                </BarChart>
-
-              </ResponsiveContainer>
-
-            </div>
-
-          </div>
-
-          {/* LINE CHART */}
-          <div className="xl:col-span-2 bg-gray-900/80 border border-gray-800 backdrop-blur-md p-6 rounded-3xl shadow-2xl">
-
-            <h2 className="text-2xl font-bold mb-6">
-              Sentiment Trend Analysis
-            </h2>
-
-            <div className="h-96">
-
-              <ResponsiveContainer width="100%" height="100%">
-
-                <LineChart data={lineData}>
-
-                  <CartesianGrid strokeDasharray="3 3" />
-
-                  <XAxis dataKey="day" />
-
-                  <YAxis />
-
-                  <Tooltip />
-
-                  <Legend />
-
-                  <Line
-                    type="monotone"
-                    dataKey="positive"
-                    stroke="#10b981"
-                    strokeWidth={3}
-                  />
-
-                  <Line
-                    type="monotone"
-                    dataKey="negative"
-                    stroke="#ef4444"
-                    strokeWidth={3}
-                  />
-
-                </LineChart>
-
-              </ResponsiveContainer>
-
-            </div>
-
-          </div>
-
+        <div className="mt-10">
+          <DatasetTable data={tableData} />
         </div>
-
-        {/* LATEST POSTS */}
-        <div className="bg-gray-900/80 border border-gray-800 backdrop-blur-md p-6 rounded-3xl shadow-2xl mb-10">
-
-          <h2 className="text-2xl font-bold mb-6">
-            Latest Posts
-          </h2>
-
-          <div className="space-y-4">
-
-            <div className="bg-gray-800 p-4 rounded-xl hover:bg-gray-700 transition-all duration-300">
-              Amazing dashboard performance update 🚀
-            </div>
-
-            <div className="bg-gray-800 p-4 rounded-xl hover:bg-gray-700 transition-all duration-300">
-              AI analytics charts look incredible.
-            </div>
-
-            <div className="bg-gray-800 p-4 rounded-xl hover:bg-gray-700 transition-all duration-300">
-              Negative sentiment dropped by 12%.
-            </div>
-
-          </div>
-
-        </div>
-
-        {/* DASHBOARD SECTIONS */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-10">
-
-          {/* TRENDING TOPICS */}
-          <div className="bg-gray-900/80 border border-gray-800 backdrop-blur-md p-6 rounded-3xl shadow-2xl">
-
-            <h2 className="text-2xl font-bold mb-6">
-              Trending Topics
-            </h2>
-
-            <div className="flex flex-wrap gap-4">
-
-              <span className="bg-cyan-600 px-4 py-2 rounded-full">
-                #AI
-              </span>
-
-              <span className="bg-purple-600 px-4 py-2 rounded-full">
-                #Dashboard
-              </span>
-
-              <span className="bg-emerald-600 px-4 py-2 rounded-full">
-                #Analytics
-              </span>
-
-              <span className="bg-rose-600 px-4 py-2 rounded-full">
-                #Performance
-              </span>
-
-              <span className="bg-yellow-600 px-4 py-2 rounded-full">
-                #UIUX
-              </span>
-
-            </div>
-
-          </div>
-
-          {/* LIVE ACTIVITY */}
-          <div className="bg-gray-900/80 border border-gray-800 backdrop-blur-md p-6 rounded-3xl shadow-2xl">
-
-            <h2 className="text-2xl font-bold mb-6">
-              Live Activity
-            </h2>
-
-            <div className="space-y-4">
-
-              <div className="bg-gray-800 p-4 rounded-xl hover:bg-gray-700 transition-all duration-300">
-                Positive sentiment spike detected
-              </div>
-
-              <div className="bg-gray-800 p-4 rounded-xl hover:bg-gray-700 transition-all duration-300">
-                New Reddit dataset processed
-              </div>
-
-              <div className="bg-gray-800 p-4 rounded-xl hover:bg-gray-700 transition-all duration-300">
-                Trending topic updated: AI Analytics
-              </div>
-
-            </div>
-
-          </div>
-
-        </div>
-
-        {/* DATASET TABLE */}
-        <DatasetTable data={sampleData} />
 
       </div>
-
     </div>
-
   );
-
 }
