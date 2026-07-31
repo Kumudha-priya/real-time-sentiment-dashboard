@@ -1,4 +1,4 @@
-from logger import logger
+from app.logger import logger
 import re
 
 # ---------------------------
@@ -75,3 +75,246 @@ def clean_text(text):
     except Exception as e:
         logger.error(f"Error in text cleaning: {str(e)}")
         return text
+    # ---------------------------
+# 8. SIMPLE TOPIC ASSIGNMENT
+# ---------------------------
+def assign_topic(text):
+
+    text = clean_text(text)
+
+    topics = {
+
+        "Sports": [
+            "cricket",
+            "football",
+            "soccer",
+            "basketball",
+            "tennis",
+            "match",
+            "player",
+            "tournament",
+            "ipl",
+            "score",
+            "sport",
+            "team"
+        ],
+
+
+        "Technology": [
+    "technology",
+    "tech",
+    "software",
+    "hardware",
+    "computer",
+    "python",
+    "coding",
+    "programming",
+    "artificial intelligence",
+    "ai",
+    "application",
+    "android",
+    "iphone",
+    "phone",
+    "mobile",
+    "laptop",
+    "device",
+    "camera",
+    "battery"
+],
+
+
+       "Entertainment": [
+    "movie",
+    "film",
+    "actor",
+    "cinema",
+    "netflix",
+    "series",
+    "show",
+    "music",
+    "song",
+    "album",
+    "kpop",
+    "game",
+    "gaming",
+    "anime"
+],
+
+
+        "Food": [
+            "food",
+            "dinner",
+            "lunch",
+            "breakfast",
+            "restaurant",
+            "recipe",
+            "eat",
+            "cooking"
+        ],
+
+
+        "Health": [
+            "doctor",
+            "hospital",
+            "medicine",
+            "health",
+            "fever",
+            "pain",
+            "fitness"
+        ],
+
+
+        "Education": [
+            "school",
+            "college",
+            "university",
+            "exam",
+            "student",
+            "study",
+            "course",
+            "education"
+        ],
+
+
+        "Travel": [
+            "travel",
+            "trip",
+            "flight",
+            "hotel",
+            "vacation",
+            "tour"
+        ],
+
+
+        "Business": [
+            "business",
+            "company",
+            "stock",
+            "market",
+            "finance",
+            "investment",
+            "money"
+        ],
+
+
+        "Religion": [
+            "church",
+            "faith",
+            "god",
+            "religion",
+            "prayer",
+            "spiritual"
+        ],
+
+        "Social Media": [
+    "twitter",
+    "tweet",
+    "reddit",
+    "post",
+    "comment",
+    "followers",
+    "instagram",
+    "facebook"
+],
+
+
+        "Politics": [
+            "government",
+            "election",
+            "president",
+            "minister",
+            "politics"
+        ]
+
+    }
+
+
+    words = text.split()
+
+
+    topic_scores = {}
+
+
+    for topic, keywords in topics.items():
+
+        score = 0
+
+        for keyword in keywords:
+
+            if keyword in text:
+                score += 1
+
+
+        topic_scores[topic] = score
+
+
+
+    best_topic = max(
+        topic_scores,
+        key=topic_scores.get
+    )
+
+
+    if topic_scores[best_topic] > 0:
+        return best_topic
+
+
+    return smart_topic_name(text.split())
+# ---------------------------
+# SMART TOPIC NAMING (NEW)
+# ---------------------------
+# ---------------------------
+# SMART TOPIC NAMING (NEW)
+# ---------------------------
+def smart_topic_name(words):
+
+    text = " ".join(words).lower()
+
+
+    if any(w in text for w in ["football", "cricket", "tennis", "match"]):
+        return "Sports"
+
+
+    if any(w in text for w in ["movie", "film", "actor", "cinema","netflix","series","show","kpop","game","gaming","anime"]):
+        return "Entertainment"
+
+
+    if any(w in text for w in ["music", "song", "album"]):
+        return "Music"
+
+
+    if any(w in text for w in ["school", "college", "exam"]):
+        return "Education"
+
+
+    if any(w in text for w in ["food", "dinner", "lunch", "breakfast"]):
+        return "Food"
+
+
+    if any(w in text for w in ["doctor", "hospital", "pain", "sick"]):
+        return "Health"
+
+
+    if any(w in text for w in [
+    "tech",
+    "ai",
+    "software",
+    "app",
+    "phone",
+    "mobile",
+    "laptop",
+    "camera",
+    "battery",
+    "computer"
+]):
+     return "Technology"
+
+
+    if any(w in text for w in ["travel", "trip", "flight"]):
+        return "Travel"
+
+
+    if any(w in text for w in ["stock", "business", "money"]):
+        return "Business"
+
+    return "General"

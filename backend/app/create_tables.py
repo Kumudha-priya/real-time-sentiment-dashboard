@@ -1,5 +1,5 @@
 from database import engine
-from models import Base, Post, Topic   
+from app.models import Base, Post, Topic   
 
 print("SCRIPT STARTED")
 

@@ -2,9 +2,11 @@ venv/
 __pycache__/
 *.pyc
 *.db
-*.csv
-*.zip
-datasets/
-cleaned_data/
 .env
 node_modules/
+# Large generated datasets
+backend/datasets/
+backend/cleaned_data/
+backend/processed_results.csv
+backend/processed_results.zip
+backend/logs/

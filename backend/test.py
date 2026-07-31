@@ -50,3 +50,9 @@ print(topics)
 
 print("\nTopic Info:")
 print(topic_model.get_topic_info())
+from app.trend_analysis import load_data
+
+df = load_data()
+
+print("\nDataset Columns:")
+print(df.columns.tolist())

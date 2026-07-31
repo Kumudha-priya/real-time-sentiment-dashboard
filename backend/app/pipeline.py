@@ -1,5 +1,5 @@
 from app.preprocess import clean_text
-from app.sentiment import analyze_sentiment
+from app.sentiment import analyze_roberta_sentiment
 from app.keywords import extract_keywords
 from app.brand_analysis import analyze_brand_keywords
 from app.export_utils import export_results_csv
@@ -33,12 +33,12 @@ def run_pipeline(posts):
 
     for text in cleaned_posts:
 
-        sentiment, confidence = analyze_sentiment(text)
+        result = analyze_roberta_sentiment(text)
 
         sentiments.append({
-            "sentiment": sentiment,
-            "confidence": confidence
-        })
+            "sentiment": result["sentiment"],
+            "confidence": result["confidence"]
+})
 
     # -----------------------------------
     # KEYWORD EXTRACTION
@@ -60,7 +60,9 @@ def run_pipeline(posts):
 
             "sentiment": sentiments[i]["sentiment"],
 
-            "confidence": sentiments[i]["confidence"]
+            "confidence": sentiments[i]["confidence"],
+            "model": sentiments[i]["model"],
+            "prediction_time": sentiments[i]["prediction_time"]
 
         })
 

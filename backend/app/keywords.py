@@ -1,21 +1,15 @@
 from sklearn.feature_extraction.text import TfidfVectorizer
-from collections import Counter
 import nltk
 from nltk.corpus import stopwords
-
-# -----------------------------------
-# DOWNLOAD STOPWORDS
-# -----------------------------------
 
 nltk.download("stopwords")
 
 stop_words = set(stopwords.words("english"))
 
-# -----------------------------------
-# MAIN KEYWORD EXTRACTION FUNCTION
-# -----------------------------------
-
 def extract_keywords(posts, top_n=10):
+
+    if isinstance(posts, str):
+        posts = [posts]
 
     vectorizer = TfidfVectorizer(
         stop_words="english",

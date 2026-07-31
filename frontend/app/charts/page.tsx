@@ -37,6 +37,12 @@ type BrandAlert = {
   brand?: string;
   count: number;
 };
+type SentimentItem = {
+  platform: string;
+  Positive: number;
+  Neutral: number;
+  Negative: number;
+};
 
 type Analytics = {
   daily_trends: TrendItem[];
@@ -77,12 +83,59 @@ export default function ChartsPage() {
       try {
         setLoading(true);
 
-        const res = await fetch("http://127.0.0.1:8000/analytics");
+        const token = localStorage.getItem("token");
 
-        if (!res.ok) throw new Error("API failed");
+const analyticsRes = await fetch(
+  "http://127.0.0.1:8000/analytics",
+  {
+    headers:{
+      Authorization:`Bearer ${token}`
+    }
+  }
+);
 
-        const data = await res.json();
-        setAnalytics(data);
+
+const sentimentRes = await fetch(
+  "http://127.0.0.1:8000/sentiments"
+);
+
+
+if(!analyticsRes.ok || !sentimentRes.ok){
+  throw new Error("Failed to fetch analytics data");
+}
+
+
+const analyticsData: Analytics = await analyticsRes.json();
+
+
+const sentimentData: SentimentItem[] =
+await sentimentRes.json();
+
+
+const sentimentDistribution = sentimentData.reduce(
+  (acc, item)=>{
+
+    acc.Positive += item.Positive;
+    acc.Neutral += item.Neutral;
+    acc.Negative += item.Negative;
+
+    return acc;
+
+  },
+  {
+    Positive:0,
+    Neutral:0,
+    Negative:0
+  }
+);
+
+
+setAnalytics({
+  ...analyticsData,
+  sentiment_distribution: sentimentDistribution
+});
+
+
       } catch (err) {
   if (err instanceof Error) {
     setError(err.message);
@@ -114,6 +167,7 @@ export default function ChartsPage() {
   }
 
   if (!analytics) return null;
+  console.log("TOPIC FREQUENCY:", analytics.topic_frequency);
 
 const COLORS = ["#22c55e", "#ef4444", "#3b82f6"];
 
@@ -133,15 +187,16 @@ const sentimentChartData = [
 ];
 
   return (
-    <div className="p-6 space-y-8 bg-gray-100 min-h-screen">
+    <div className="p-6 space-y-8 bg-slate-100 min-h-screen text-slate-900">
 
-      <h1 className="text-4xl font-bold">
+    <h1 className="text-4xl font-bold text-slate-900">
+      
         Analytics Dashboard
       </h1>
 
       {/* DAILY TREND */}
-      <div className="bg-white p-6 rounded-2xl shadow transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
-        <h2 className="text-2xl font-bold mb-4">
+      <div className="bg-white text-slate-900 p-6 rounded-2xl shadow transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
+        <h2 className="text-2xl font-bold mb-4 text-slate-900">
           Daily Sentiment Trend
         </h2>
 
@@ -151,12 +206,21 @@ const sentimentChartData = [
             <XAxis dataKey="date" />
             <YAxis />
            <Tooltip
-  contentStyle={{
-    borderRadius: "12px",
-    border: "none",
-  }}
+ contentStyle={{
+    background:"#ffffff",
+    color:"#0f172a",
+    borderRadius:"12px",
+    border:"1px solid #cbd5e1",
+ }}
+ labelStyle={{
+    color:"#0f172a"
+ }}
 />
-            <Legend />
+            <Legend
+ wrapperStyle={{
+   color:"#334155"
+ }}
+/>
             <Line
   type="monotone"
   dataKey="count"
@@ -170,8 +234,8 @@ const sentimentChartData = [
       </div>
 
       {/* PLATFORM PIE */}
-      <div className="bg-white p-6 rounded-2xl shadow transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
-        <h2 className="text-2xl font-bold mb-4">
+      <div className="bg-white text-slate-900 p-6 rounded-2xl shadow transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
+       <h2 className="text-2xl font-bold mb-4 text-slate-900">
           Platform Comparison
         </h2>
 
@@ -191,20 +255,29 @@ const sentimentChartData = [
                 
               ))}
             </Pie>
-
             <Tooltip
-  contentStyle={{
-    borderRadius: "12px",
-    border: "none",
-  }}
+ contentStyle={{
+    background:"#ffffff",
+    color:"#0f172a",
+    borderRadius:"12px",
+    border:"1px solid #cbd5e1",
+ }}
+ labelStyle={{
+    color:"#0f172a"
+ }}
 />
-            <Legend />
+            
+           <Legend
+ wrapperStyle={{
+   color:"#334155"
+ }}
+/>
           </PieChart>
         </ResponsiveContainer>
       </div>
       {/* STACKED SENTIMENT CHART */}
-<div className="bg-white p-6 rounded-2xl shadow transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
-  <h2 className="text-2xl font-bold mb-4">
+<div className="bg-white text-slate-900 p-6 rounded-2xl shadow transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
+  <h2 className="text-2xl font-bold mb-4 text-slate-900">
     Sentiment Distribution
   </h2>
 
@@ -226,19 +299,28 @@ const sentimentChartData = [
     </Pie>
 
     <Tooltip
-      contentStyle={{
-        borderRadius: "12px",
-        border: "none",
-      }}
-    />
+ contentStyle={{
+    background:"#ffffff",
+    color:"#0f172a",
+    borderRadius:"12px",
+    border:"1px solid #cbd5e1",
+ }}
+ labelStyle={{
+    color:"#0f172a"
+ }}
+/>
 
-    <Legend />
+    <Legend
+ wrapperStyle={{
+   color:"#334155"
+ }}
+/>
   </PieChart>
 </ResponsiveContainer>
 </div>
       {/* BRAND TRENDS */}
-<div className="bg-white p-6 rounded-2xl shadow transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
-  <h2 className="text-2xl font-bold mb-4">
+<div className="bg-white text-slate-900 p-6 rounded-2xl shadow transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
+  <h2 className="text-2xl font-bold mb-4 text-slate-900">
     Brand Sentiment Trends
   </h2>
 
@@ -248,13 +330,23 @@ const sentimentChartData = [
 
       <XAxis dataKey="brand" />
       <YAxis />
-      <Tooltip
-  contentStyle={{
-    borderRadius: "12px",
-    border: "none",
-  }}
+      
+  <Tooltip
+ contentStyle={{
+    background:"#ffffff",
+    color:"#0f172a",
+    borderRadius:"12px",
+    border:"1px solid #cbd5e1",
+ }}
+ labelStyle={{
+    color:"#0f172a"
+ }}
 />
-      <Legend />
+     <Legend
+ wrapperStyle={{
+   color:"#334155"
+ }}
+/> 
 
       <Bar
   dataKey="count"
@@ -267,24 +359,46 @@ const sentimentChartData = [
   </ResponsiveContainer>
 </div>
       {/* TOPIC FREQUENCY */}
-<div className="bg-white p-6 rounded-2xl shadow transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
-  <h2 className="text-2xl font-bold mb-4">
+<div className="bg-white text-slate-900 p-6 rounded-2xl shadow transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
+  <h2 className="text-2xl font-bold mb-4 text-slate-900">
     Topic Frequency
   </h2>
 
   <ResponsiveContainer width="100%" height={280}>
-    <BarChart data={analytics.topic_frequency}>
+    <BarChart
+ data={analytics.topic_frequency
+   .sort((a,b)=>b.count-a.count)
+   .slice(0,10)}
+>
       <CartesianGrid strokeDasharray="3 3" />
 
-      <XAxis dataKey="topic" />
-      <YAxis />
-      <Tooltip
-  contentStyle={{
-    borderRadius: "12px",
-    border: "none",
-  }}
+     <XAxis
+ dataKey="topic"
+ tick={{fill:"#334155"}}
+ angle={-45}
+ textAnchor="end"
+ interval={0}
+ height={120}
 />
-      <Legend />
+
+<YAxis />
+
+     <Tooltip
+ contentStyle={{
+    background:"#ffffff",
+    color:"#0f172a",
+    borderRadius:"12px",
+    border:"1px solid #cbd5e1",
+ }}
+ labelStyle={{
+    color:"#0f172a"
+ }}
+/>
+     <Legend
+ wrapperStyle={{
+   color:"#334155"
+ }}
+/>
 
       <Bar
   dataKey="count"
@@ -297,24 +411,44 @@ const sentimentChartData = [
   </ResponsiveContainer>
 </div>
 {/* KEYWORD FREQUENCY */}
-<div className="bg-white p-6 rounded-2xl shadow transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
-  <h2 className="text-2xl font-bold mb-4">
+<div className="bg-white text-slate-900 p-6 rounded-2xl shadow transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
+ <h2 className="text-2xl font-bold mb-4 text-slate-900">
     Keyword Frequency
   </h2>
 
   <ResponsiveContainer width="100%" height={280}>
-    <BarChart data={analytics.keyword_frequency}>
+    <BarChart
+  data={analytics.keyword_frequency
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10)}
+>
       <CartesianGrid strokeDasharray="3 3" />
 
-      <XAxis dataKey="keyword" />
+     <XAxis
+ dataKey="keyword"
+ tick={{fill:"#334155"}}
+ angle={-45}
+ textAnchor="end"
+ interval={0}
+ height={120}
+/>
       <YAxis />
       <Tooltip
-  contentStyle={{
-    borderRadius: "12px",
-    border: "none",
-  }}
+ contentStyle={{
+    background:"#ffffff",
+    color:"#0f172a",
+    borderRadius:"12px",
+    border:"1px solid #cbd5e1",
+ }}
+ labelStyle={{
+    color:"#0f172a"
+ }}
 />
-      <Legend />
+      <Legend
+ wrapperStyle={{
+   color:"#334155"
+ }}
+/>
 
       <Bar
   dataKey="count"
@@ -327,14 +461,17 @@ const sentimentChartData = [
   </ResponsiveContainer>
 </div>
 {/* KEYWORD BUBBLE VISUALIZATION */}
-<div className="bg-white p-6 rounded-2xl shadow transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
+<div className="bg-white text-slate-900 p-6 rounded-2xl shadow transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
   <h2 className="text-2xl font-bold mb-6">
     Keyword Visualization
   </h2>
 
   <div className="flex flex-wrap gap-6 justify-center items-center min-h-[300px]">
 
-    {analytics.keyword_frequency.map((item, index) => (
+    {analytics.keyword_frequency
+  .sort((a, b) => b.count - a.count)
+  .slice(0, 30)
+  .map((item, index) => (
       <div
         key={index}
         className="flex items-center justify-center rounded-full text-white font-bold transition-all duration-300 hover:scale-110"
@@ -359,8 +496,8 @@ const sentimentChartData = [
   </div>
 </div>
       {/* MOVING AVERAGE */}
-      <div className="bg-white p-6 rounded-2xl shadow transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
-        <h2 className="text-2xl font-bold mb-4">
+      <div className="bg-white text-slate-900 p-6 rounded-2xl shadow transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
+        <h2 className="text-2xl font-bold mb-4 text-slate-900">
           Moving Average Sentiment
         </h2>
 
@@ -370,13 +507,23 @@ const sentimentChartData = [
 
     <XAxis dataKey="date" />
     <YAxis />
-    <Tooltip
-  contentStyle={{
-    borderRadius: "12px",
-    border: "none",
-  }}
+    
+  <Tooltip
+ contentStyle={{
+    background:"#ffffff",
+    color:"#0f172a",
+    borderRadius:"12px",
+    border:"1px solid #cbd5e1",
+ }}
+ labelStyle={{
+    color:"#0f172a"
+ }}
 />
-    <Legend />
+   <Legend
+ wrapperStyle={{
+   color:"#334155"
+ }}
+/> 
 
     <Area
   type="monotone"
@@ -392,8 +539,8 @@ const sentimentChartData = [
       </div>
 
       {/* SPIKES */}
-      <div className="bg-white p-6 rounded-2xl shadow transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
-        <h2 className="text-2xl font-bold mb-4">
+      <div className="bg-white text-slate-900 p-6 rounded-2xl shadow transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
+       <h2 className="text-2xl font-bold mb-4 text-slate-900">
           Spike Detection
         </h2>
 
@@ -403,13 +550,22 @@ const sentimentChartData = [
 
     <XAxis dataKey="date" />
     <YAxis />
-    <Tooltip
-  contentStyle={{
-    borderRadius: "12px",
-    border: "none",
-  }}
+   <Tooltip
+ contentStyle={{
+    background:"#ffffff",
+    color:"#0f172a",
+    borderRadius:"12px",
+    border:"1px solid #cbd5e1",
+ }}
+ labelStyle={{
+    color:"#0f172a"
+ }}
 />
-    <Legend />
+    <Legend
+ wrapperStyle={{
+   color:"#334155"
+ }}
+/>
 
     <Bar
   dataKey="post_volume"

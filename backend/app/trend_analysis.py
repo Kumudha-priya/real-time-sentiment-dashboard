@@ -1,14 +1,36 @@
 import os
 import pandas as pd
 import numpy as np
+import re
 
 # NEW IMPORTS (IMPORTANT)
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 import json
 from collections import Counter
 from scipy.stats import zscore
+from app.topic_modeling import extract_topics
     
-
+CUSTOM_STOPWORDS = {
+    "amp",
+    "im",
+    "just",
+    "got",
+    "dont",
+    "know",
+    "like",
+    "really",
+    "today",
+    "day",
+    "time",
+    "good",
+    "going",
+    "want",
+    "work",
+    "night",
+    "lol",
+    "think"
+}
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -68,6 +90,8 @@ def load_data():
         freq="min"
     )
 
+    np.random.seed(42)
+
     reddit_df["sentiment"] = np.random.choice(
         ["Positive", "Neutral", "Negative"],
         size=len(reddit_df)
@@ -75,7 +99,7 @@ def load_data():
 
     df = pd.concat([twitter_df, reddit_df], ignore_index=True)
 
-    df = df.sample(n=50000, random_state=42)
+    df = df.sample(n=20000, random_state=42)
     df = df.dropna(subset=["date"])
 
     df = df[df["sentiment"].isin(["Positive", "Neutral", "Negative"])]
@@ -210,14 +234,20 @@ def add_moving_average(df):
 # =========================
 # STATIC ANALYTICS
 # =========================
-def get_topic_frequency(df):
+def get_topic_frequency(df, platform=None):
+
+    if platform:
+        df = df[df["platform"] == platform]
+
+    texts = df["clean_text"].dropna().astype(str).head(10000)
+    topics = extract_topics(texts)
 
     return [
-        {"topic": "AI", "count": 1200},
-        {"topic": "Sports", "count": 950},
-        {"topic": "Politics", "count": 870},
-        {"topic": "Movies", "count": 720},
-        {"topic": "Technology", "count": 1400},
+        {
+            "topic": t["topic_name"],
+            "count": len(t["keywords"])
+        }
+        for t in topics
     ]
 
 
@@ -240,10 +270,13 @@ def get_keyword_frequency_ml(df):
 
     texts = df["clean_text"].dropna().astype(str)
 
+    texts = texts.apply(lambda x: re.sub(r"[^a-zA-Z\s]", "", str(x).lower()))
+    
     vectorizer = CountVectorizer(
-        stop_words="english",
-        max_features=20
-    )
+    stop_words=list(ENGLISH_STOP_WORDS.union(CUSTOM_STOPWORDS)),
+    max_features=50,
+    ngram_range=(1, 2)
+)
 
     X = vectorizer.fit_transform(texts)
 

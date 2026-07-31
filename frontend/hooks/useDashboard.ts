@@ -1,61 +1,177 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
-import { fetchAnalytics } from "@/services/api";
+
+import { useEffect, useState } from "react";
+import { fetchDashboard, fetchTrends } from "@/services/api";
 import { AnalyticsResponse } from "@/lib/types";
 
-export const useDashboard = () => {
-  const [data, setData] = useState<AnalyticsResponse | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const loadData = useCallback(async () => {
-    try {
-      setError(null);
+type TrendItem = {
+  date:string;
+  count?:number;
+  sentiment_count?:number;
+  moving_avg_sentiment?:number;
+};
 
-      const res = await fetchAnalytics();
-      setData(res);
-    } catch {
-      setError("Failed to load dashboard data");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
-  useEffect(() => {
-    let isMounted = true;
+export const useDashboard = (
+  platform="",
+  startDate="",
+  endDate="",
+  brand=""
+)=>{
 
-    const fetchData = async () => {
-      try {
-        const res = await fetchAnalytics();
 
-        if (isMounted) {
-          setData(res);
-          setLoading(false);
-        }
-      } catch {
-        if (isMounted) {
-          setError("Failed to load dashboard data");
-          setLoading(false);
-        }
-      }
-    };
+const [data,setData]=
+useState<AnalyticsResponse|null>(null);
 
-    fetchData();
 
-    const interval = setInterval(() => {
-      fetchData();
-    }, 15000);
+const [loading,setLoading]=
+useState(true);
 
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
-  }, []);
 
-  return {
-    data,
-    loading,
-    error,
-    retry: loadData,
-  };
+const [error,setError]=
+useState<string|null>(null);
+
+
+const [trendData,setTrendData]=
+useState<TrendItem[]>([]);
+
+
+
+useEffect(()=>{
+
+
+async function loadDashboard(){
+
+
+try{
+
+
+setLoading(true);
+
+setError(null);
+
+
+
+const result =
+await fetchDashboard(
+platform,
+startDate,
+endDate,
+brand
+);
+
+
+
+if(result){
+
+
+setData(result);
+
+
+const trendsResponse =
+await fetchTrends(
+    platform,
+    startDate,
+    endDate,
+    brand
+);
+
+
+console.log(
+"TREND RESPONSE:",
+trendsResponse
+);
+
+
+setTrendData(
+    trendsResponse
+);
+
+
+}
+else{
+
+
+setError(
+"No dashboard data available"
+);
+
+
+setData(null);
+
+
+}
+
+
+
+}
+
+catch(error){
+
+
+if(
+error instanceof DOMException &&
+error.name==="AbortError"
+){
+
+return;
+
+}
+
+
+console.log(
+"Dashboard loading error:",
+error
+);
+
+
+setError(
+"Failed to load dashboard"
+);
+
+
+
+}
+
+finally{
+
+
+setLoading(false);
+
+
+}
+
+
+
+}
+
+
+
+loadDashboard();
+
+
+
+},[
+platform,
+startDate,
+endDate,
+brand
+]);
+
+
+
+return{
+
+data,
+
+loading,
+
+error,
+
+trendData
+
+};
+
+
 };

@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from scipy.stats import zscore
+from app.notifications import send_negative_alert
 def detect_anomalies(df):
 
     # GROUP BY DAY INSTEAD OF FULL TIMESTAMP
@@ -21,9 +22,8 @@ def detect_anomalies(df):
     else:
         volume_df["z_score"] = (
             volume_df["post_volume"] - mean
-        ) 
-
-    spikes = volume_df[volume_df["z_score"] > 2]
+        ) / std
+    spikes = volume_df[abs(volume_df["z_score"]) > 2]
 
     return spikes
 def detect_brand_alerts(df):
@@ -59,5 +59,72 @@ def detect_brand_alerts(df):
         if x > 2
         else ("⚠ TRENDING" if x > 1 else "NORMAL")
     )
+    for _,row in brand_volume.iterrows():
+
+     if row["alert"]=="🔥 VIRAL SPIKE":
+
+
+        send_negative_alert(
+            round(row["z_score"],2)
+        )
 
     return brand_volume
+# ---------------------------------
+# NEGATIVE SENTIMENT SPIKE ALERT
+# ---------------------------------
+
+def detect_negative_sentiment_spike(df):
+
+
+    if "sentiment" not in df.columns:
+        return None
+
+
+    daily_sentiment = (
+        df.groupby("date")["sentiment"]
+        .apply(
+            lambda x:
+            (x == "Negative").mean() * 100
+        )
+        .reset_index(
+            name="negative_percentage"
+        )
+    )
+
+
+    mean = daily_sentiment["negative_percentage"].mean()
+
+    std = daily_sentiment["negative_percentage"].std()
+
+
+    if std == 0:
+        return None
+
+
+    daily_sentiment["z_score"] = (
+        daily_sentiment["negative_percentage"]
+        -
+        mean
+    ) / std
+
+
+
+    alerts = daily_sentiment[
+        daily_sentiment["z_score"] > 2
+    ]
+
+
+    for _, row in alerts.iterrows():
+
+        increase = round(
+            row["negative_percentage"] - mean,
+            2
+        )
+
+
+        send_negative_alert(
+            increase
+        )
+
+
+    return alerts

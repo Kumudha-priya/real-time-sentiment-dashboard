@@ -1,6 +1,11 @@
 from transformers import pipeline
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+from sentence_transformers import SentenceTransformer
 
+model = SentenceTransformer(
+    "all-MiniLM-L6-v2",
+    local_files_only=True
+)
 # -----------------------------------
 # LOAD DISTILBERT MODEL (CACHED)
 # -----------------------------------

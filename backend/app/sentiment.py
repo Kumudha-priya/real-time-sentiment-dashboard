@@ -1,200 +1,224 @@
-import nltk
 import time
 
-# backend/app/sentiment.py or main.py
-
 from transformers import pipeline
-
-sentiment_pipeline = pipeline(
-    "sentiment-analysis",
-    model="distilbert/distilbert-base-uncased-finetuned-sst-2-english"
-)
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 from app.logger import logger
 
-# nltk.download('vader_lexicon')  # run once only
+
+# ----------------------------------
+# LOAD MODELS
+# ----------------------------------
 
 analyzer = SentimentIntensityAnalyzer()
-# -------------------------------
-# LOAD DISTILBERT MODEL
-# -------------------------------
+
+
+# Twitter RoBERTa model
+# Loaded once when backend starts
 
 classifier = pipeline(
     "sentiment-analysis",
-    model="distilbert/distilbert-base-uncased-finetuned-sst-2-english"
+    model="cardiffnlp/twitter-roberta-base-sentiment-latest"
 )
 
 
-# ----------------------------
-# MAIN FUNCTION (for backend / API / dashboard)
-# ----------------------------
-def get_sentiment(text):
-    try:
-        logger.info(f"Processing text: {text}")
 
-        scores = analyzer.polarity_scores(text)
-        compound = scores['compound']
+# ----------------------------------
+# SENTIMENT SUMMARY
+# ----------------------------------
+
+def sentiment_summary(df):
+
+    return {
+
+        "positive":
+            len(df[df["sentiment"] == "positive"]),
+
+        "negative":
+            len(df[df["sentiment"] == "negative"]),
+
+        "neutral":
+            len(df[df["sentiment"] == "neutral"])
+
+    }
+
+
+
+# ----------------------------------
+# VADER FALLBACK
+# ----------------------------------
+
+def get_sentiment(text):
+
+    try:
+
+        scores = analyzer.polarity_scores(
+            str(text)
+        )
+
+
+        compound = scores["compound"]
+
 
         if compound >= 0.05:
             sentiment = "positive"
+
         elif compound <= -0.05:
             sentiment = "negative"
+
         else:
             sentiment = "neutral"
 
-        result = {
-            "sentiment": sentiment,
-            "confidence": abs(compound),
-            "scores": scores
-        }
 
-        logger.info(f"Sentiment result: {result}")
 
-        return result
-
-    except Exception as e:
-
-        logger.error(f"Error in get_sentiment: {e}")
-        
         return {
-            "sentiment": "neutral",
-            "confidence": 0.0,
-            "scores": {}
+
+            "sentiment": sentiment,
+
+            "confidence":
+                round(abs(compound) * 100, 2),
+
+            "scores": scores
+
         }
 
 
-# ----------------------------
-# DAY 2 REQUIRED FUNCTION (simple output)
-# ----------------------------
-def analyze_sentiment(text):
-    try:
-        scores = analyzer.polarity_scores(text)
-
-        compound = scores['compound']
-
-        if compound >= 0.05:
-            sentiment = "Positive"
-        elif compound <= -0.05:
-            sentiment = "Negative"
-        else:
-            sentiment = "Neutral"
-
-        confidence = abs(compound)
-
-        return sentiment, confidence
     except Exception as e:
 
-        logger.error(f"Error in analyze_sentiment: {e}")
+        logger.error(
+            f"VADER error {e}"
+        )
 
-        return "Neutral", 0.0
-    # -------------------------------
-# DISTILBERT SENTIMENT FUNCTION
-# -------------------------------
 
-def analyze_bert_sentiment(text):
+        return {
+
+            "sentiment":"neutral",
+
+            "confidence":0.0,
+
+            "scores":{}
+
+        }
+
+
+
+# ----------------------------------
+# MAIN SENTIMENT FUNCTION
+# ----------------------------------
+
+def analyze_roberta_sentiment(text):
 
     start_time = time.time()
 
     try:
 
-        logger.info(f"Running DistilBERT on: {text}")
+        result = classifier(
+            str(text),
+            truncation=True,
+            max_length=512
+        )[0]
 
-        # -------------------------------
-        # DISTILBERT PREDICTION
-        # -------------------------------
 
-        result = classifier(text)
+        label = result["label"].lower()
 
-        label = result[0]["label"]
-        score = result[0]["score"]
+        confidence = result["score"]
 
-        # -------------------------------
-        # LABEL CONVERSION
-        # -------------------------------
 
-        if label == "POSITIVE":
-            sentiment = "Positive"
+        if label in ["positive", "label_2"]:
+            sentiment = "positive"
+
+        elif label in ["negative", "label_0"]:
+            sentiment = "negative"
+
+        elif label in ["neutral", "label_1"]:
+            sentiment = "neutral"
+
         else:
-            sentiment = "Negative"
+            sentiment = "neutral"
 
-        end_time = time.time()
 
-        prediction_time = round(end_time - start_time, 4)
 
-        final_result = {
-            "model": "DistilBERT",
-            "sentiment": sentiment,
-            "confidence_score": round(score, 4),
-            "prediction_time": prediction_time
+        return {
+
+            "model":
+                "Twitter-RoBERTa",
+
+            "sentiment":
+                sentiment,
+
+            "confidence_score":
+                round(confidence * 100, 2),
+
+            "prediction_time":
+                round(
+                    time.time() - start_time,
+                    4
+                )
+
         }
 
-        logger.info(f"DistilBERT Result: {final_result}")
-
-        return final_result
 
     except Exception as e:
 
-        logger.error(f"DistilBERT failed: {e}")
+        logger.error(
+            f"RoBERTa failed {e}"
+        )
 
-        # -------------------------------
-        # FALLBACK TO VADER
-        # -------------------------------
 
-        vader_score = analyzer.polarity_scores(text)
+        vader = get_sentiment(text)
 
-        compound = vader_score["compound"]
 
-        if compound >= 0.05:
-            sentiment = "Positive"
+        return {
 
-        elif compound <= -0.05:
-            sentiment = "Negative"
+            "model":
+                "VADER",
 
-        else:
-            sentiment = "Neutral"
+            "sentiment":
+                vader["sentiment"],
 
-        end_time = time.time()
+            "confidence_score":
+                vader["confidence"],
 
-        prediction_time = round(end_time - start_time, 4)
+            "prediction_time":
+                round(
+                    time.time() - start_time,
+                    4
+                )
 
-        fallback_result = {
-            "model": "VADER Fallback",
-            "sentiment": sentiment,
-            "confidence_score": round(abs(compound), 4),
-            "prediction_time": prediction_time
         }
 
-        logger.info(f"Fallback Result: {fallback_result}")
 
-        return fallback_result
 
-# ----------------------------
-# TESTING BLOCK
-# ----------------------------
+
+# ----------------------------------
+# TESTING
+# ----------------------------------
+
 if __name__ == "__main__":
 
-    sample_posts = [
+    posts = [
 
-        "This dashboard is amazing!",
+        "i love this product",
 
-        "The UI is terrible and slow.",
+        "this product is terrible",
 
-        "The app is okay for now.",
-
-        "I absolutely love the charts.",
-
-        "This is the worst update ever."
+        "the product is okay"
 
     ]
 
-    for post in sample_posts:
 
-        print("\n============================")
-        print("POST:", post)
+    for post in posts:
 
-        print("\nVADER RESULT:")
-        print(get_sentiment(post))
+        print("\nPOST:", post)
 
-        print("\nDISTILBERT RESULT:")
-        print(analyze_bert_sentiment(post))
+        print("RAW MODEL OUTPUT:")
+
+        print(
+            classifier(post)
+        )
+
+        print("FINAL OUTPUT:")
+
+        print(
+            analyze_roberta_sentiment(post)
+        )

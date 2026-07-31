@@ -30,26 +30,57 @@ export interface AnomalyItem {
 
 export interface DailyTrend {
   date: string;
-  count: number;
-  moving_avg_sentiment: number;
+  count?: number;
+  sentiment_count?: number;
+  moving_avg_sentiment?: number;
 }
 
 export interface AlertItem {
   text: string;
   sentiment: string;
-  confidence: number;
-  topic: string;
+  confidence_score?: number;
+  topic?: string;
+  topic_name?: string;
+  created_at?: string;
 }
 export interface AnalyticsResponse {
-  daily_trends: DailyTrend[];
-  weekly_trends: WeeklyTrend[];
-  platform_trends: PlatformTrend[];
 
-  sentiment_distribution: {
-    platform: string;
-    Positive?: number;
-    Neutral?: number;
-    Negative?: number;
+
+  logged_in_user?:string;
+
+  total_posts?:number;
+
+
+  positive?:number;
+
+  negative?:number;
+
+  neutral?:number;
+
+
+
+  daily_trends:DailyTrend[];
+
+  trend_data:DailyTrend[];
+
+
+
+  weekly_trends:WeeklyTrend[];
+
+
+  platform_trends:PlatformTrend[];
+
+
+
+  sentiment_distribution:{
+    platform:string;
+
+    Positive?:number;
+
+    Neutral?:number;
+
+    Negative?:number;
+
   }[];
 
   brand_trends: BrandTrend[];
@@ -57,8 +88,15 @@ export interface AnalyticsResponse {
   alerts: AlertItem[];
   brand_alerts: unknown[];
 
-  topic_frequency: unknown[];
+  topic_frequency: TopicItem[];
   keyword_frequency: KeywordItem[];
 
   anomalies: AnomalyItem[];
+
+top_topics: TopicItem[];
+top_keywords: KeywordItem[];
+}
+export interface TopicItem {
+  topic?: string;
+  count?: number;
 }
