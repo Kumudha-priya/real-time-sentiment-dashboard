@@ -99,14 +99,7 @@ const sentimentRes = await fetch(
   "http://127.0.0.1:8000/sentiments"
 );
 
-
-if(!analyticsRes.ok || !sentimentRes.ok){
-  throw new Error("Failed to fetch analytics data");
-}
-
-
 const analyticsData: Analytics = await analyticsRes.json();
-
 
 const sentimentData: SentimentItem[] =
 await sentimentRes.json();

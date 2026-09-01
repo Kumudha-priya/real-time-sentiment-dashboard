@@ -1,13 +1,16 @@
+# Environment variables
+.env
+
 # Datasets
-backend/datasets/
-backend/cleaned_data/
+datasets/
+cleaned_data/
 
 # Generated outputs
-backend/processed_results.csv
-backend/processed_results.zip
+processed_results.csv
+processed_results.zip
 
 # Logs
-backend/logs/
+logs/
 
 # Python cache
 __pycache__/

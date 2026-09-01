@@ -37,7 +37,9 @@ def run_pipeline(posts):
 
         sentiments.append({
             "sentiment": result["sentiment"],
-            "confidence": result["confidence"]
+            "confidence": result["confidence_score"],
+            "model": result["model"],
+            "prediction_time": result["prediction_time"]
 })
 
     # -----------------------------------
